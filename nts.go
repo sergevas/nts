@@ -17,6 +17,7 @@ func (p *payload) create(requestID, data string) payload {
 }
 
 func main() {
+	requestSub := "cg/d8f15b10c89c"
 	nc, err := nats.Connect("nats://192.168.1.70:4222",
 		nats.Name("temp-connected-garden"),
 		nats.UserInfo("foo", "secret"),
@@ -25,16 +26,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	nc.Subscribe("cg/5ccf7f2f1d04/req", func(m *nats.Msg) {
+	nc.Subscribe("cg/status", func(m *nats.Msg) {
 		log.Printf("[Received] %s", string(m.Data))
 		log.Printf("[Received msg] %+v", *m)
 		nc.Publish(m.Reply, []byte("{\"id\": \"5ccf7f2f1d04\", \"t\": 5.67}"))
 	})
 
-	resp, err := nc.Request("cg/5ccf7f2f1d04/req", []byte("req 5ccf7f2f1d04"), 1*time.Second)
-	if err != nil {
-		log.Fatal(err)
+	for {
+		resp, err := nc.Request(requestSub, []byte("req 5ccf7f2f1d04"), 5*time.Second)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("[Response]: %s", string(resp.Data))
 	}
-	log.Printf("[Response]: %s", string(resp.Data))
-	log.Printf("[Response msg] %+v", *resp)
 }
